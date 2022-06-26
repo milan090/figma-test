@@ -8,9 +8,8 @@ interface CardProps {
 export type CardComponent = React.FC<CardProps>;
 
 export const Card: CardComponent = ({ children }) => {
-  // overflow-hidden rounded-full h-[18px]
   return (
-    <div className="w-full rounded-lg bg-white border border-[##DDDDDD] p-4 card-shadow flex flex-col items-start gap-y-2">
+    <div className="w-full rounded-lg bg-white border border-[##DDDDDD] p-4 card-shadow flex flex-col items-start gap-y-2 mt-3">
       {children}
     </div>
   );

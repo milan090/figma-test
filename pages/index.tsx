@@ -93,7 +93,7 @@ const Home: NextPage = () => {
                       <div
                         {...provided.droppableProps}
                         ref={provided.innerRef}
-                        className="flex flex-col gap-y-3 w-full"
+                        className="flex flex-col w-full"
                       >
                         {column.items.map((item, cardIndex) => {
                           return (
@@ -101,6 +101,7 @@ const Home: NextPage = () => {
                               key={item.id}
                               draggableId={item.id}
                               index={cardIndex}
+                              
                             >
                               {(provided, snapshot) => {
                                 return (
