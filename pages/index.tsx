@@ -1,12 +1,69 @@
 import type { NextPage } from "next";
-import Head from "next/head";
-import Image from "next/image";
 import { Card } from "../components/Card.component";
 import { Subtitle } from "../components/Subtitle.component";
-import { Task } from "../components/Task.component";
+import { KanbanColumn } from "../components/KanbanColumn.component";
+import { Dispatch, SetStateAction, useState } from "react";
+import { Column, defaultColumns } from "../store/defaultColumns";
+import {
+  DragDropContext,
+  Draggable,
+  Droppable,
+  DropResult,
+  resetServerContext,
+} from "react-beautiful-dnd";
 
+resetServerContext();
+
+const onDragEnd = (
+  result: DropResult,
+  columns: { [key: string]: Column },
+  setColumns: Dispatch<SetStateAction<{ [key: string]: Column }>>
+) => {
+  if (!result.destination) return;
+  const { source, destination } = result;
+  // if (
+  //   typeof source.droppableId !== "number" ||
+  //   typeof destination.droppableId !== "number"
+  // )
+  //  throw new Error("Invalid droppableId");
+  console.log(source, destination);
+  if (source.droppableId !== destination.droppableId) {
+    const sourceColumn = columns[source.droppableId];
+    const destColumn = columns[destination.droppableId];
+    const sourceItems = [...sourceColumn.items];
+
+    const destItems = [...destColumn.items];
+    const [removed] = sourceItems.splice(source.index, 1);
+    destItems.splice(destination.index, 0, removed);
+    setColumns({
+      ...columns,
+      [source.droppableId]: {
+        ...sourceColumn,
+        items: sourceItems,
+      },
+      [destination.droppableId]: {
+        ...destColumn,
+        items: destItems,
+      },
+    });
+  } else {
+    const column = columns[source.droppableId];
+    const copiedItems = [...column.items];
+    const [removed] = copiedItems.splice(source.index, 1);
+    copiedItems.splice(destination.index, 0, removed);
+    setColumns({
+      ...columns,
+      [source.droppableId]: {
+        ...column,
+        items: copiedItems,
+      },
+    });
+  }
+};
 
 const Home: NextPage = () => {
+  const [columns, setColumns] = useState(defaultColumns);
+  console.log("test");
   return (
     <div className="m-10 text-sm">
       <h1 className="font-bold text-[32px] leading-[38px]">Design weekly</h1>
@@ -18,71 +75,56 @@ const Home: NextPage = () => {
         id="board"
         className="bg-[#F8F8F8] w-full rounded-xl mt-6 p-2 grid gap-4 grid-cols-3"
       >
-        <div className="flex flex-col gap-y-3 p-3 items-start">
-          <Subtitle className="font-semibold bg-lightgrey text-grey px-3 py-1 rounded-[20px]">
-            Last Week
-          </Subtitle>
-          <Card>
-            <Subtitle>Review scope</Subtitle>
-            <p className="text-darkgrey">
-              Review <u>#390.</u>
-            </p>
-            <p className="text-grey font-medium bg-[#FFDCE0] py-1 px-2.5 rounded-lg">
-              Due 4/11
-            </p>
-          </Card>
-          <Card>
-            <Subtitle>Team retro</Subtitle>
-            <div className="flex flex-col py-2 gap-y-2">
-              <Task isChecked={true}>Schedule time</Task>
-              <Task>Set up a Figma board</Task>
-            </div>
-          </Card>
-        </div>
-
-        <div className="flex flex-col gap-y-3 p-3 items-start">
-          <Subtitle className="font-semibold bg-lavender text-grey px-3 py-1 rounded-[20px]">
-            This week
-          </Subtitle>
-          <Card>
-            <div className="flex gap-x-1">
-              <div className="rounded-full overflow-hidden h-[18px] w-[18px]">
-                <Image src="/images/avatar-2.png" height={18} width={18} />
-              </div>
-              <div className="rounded-full overflow-hidden h-[18px] w-[18px]">
-                <Image src="/images/avatar-1.png" height={18} width={18} />
-              </div>
-            </div>
-            <Subtitle>Usability test</Subtitle>
-            <p className="text-darkgrey">Research questions with Carina</p>
-            <p className="text-grey font-medium bg-[#CBDFD8] py-1 px-2.5 rounded-lg">
-              Research
-            </p>
-          </Card>
-        </div>
-
-        <div className="flex flex-col gap-y-3 p-3 items-start">
-          <Subtitle className="font-semibold bg-rose text-grey px-3 py-1 rounded-[20px]">
-            Next week
-          </Subtitle>
-          <Card>
-            <div className="flex gap-x-1">
-              <div className="rounded-full overflow-hidden h-[18px] w-[18px]">
-                <Image src="/images/avatar-1.png" height={18} width={18} />
-              </div>
-            </div>
-            <Subtitle>Culture workshop</Subtitle>
-            <p>Let's build a great team.</p>
-            <div className="flex flex-col py-2 gap-y-2">
-              <Task isChecked={true}>Schedule time</Task>
-              <Task>Set up a Figma board</Task>
-              <Task>Review exercises with the team</Task>
-            </div>
-            <p className="text-grey font-medium bg-[#FFDCE0] py-1 px-2.5 rounded-lg">
-              Due 2/11
-            </p>
-          </Card>
-        </div>
+        <DragDropContext
+          onDragEnd={(result) => onDragEnd(result, columns, setColumns)}
+        >
+          {Object.entries(columns).map(([columnId, column], index) => {
+            return (
+              <KanbanColumn key={columnId}>
+                <Subtitle
+                  // bg-lavender bg-lightgrey bg-rose
+                  className={`font-semibold bg-${column.labelColor} text-grey px-3 py-1 rounded-[20px]`}
+                >
+                  {column.label}
+                </Subtitle>
+                <Droppable droppableId={columnId} key={columnId}>
+                  {(provided, snapshot) => {
+                    return (
+                      <div
+                        {...provided.droppableProps}
+                        ref={provided.innerRef}
+                        className="flex flex-col gap-y-3 w-full"
+                      >
+                        {column.items.map((item, cardIndex) => {
+                          return (
+                            <Draggable
+                              key={item.id}
+                              draggableId={item.id}
+                              index={cardIndex}
+                            >
+                              {(provided, snapshot) => {
+                                return (
+                                  <div
+                                    ref={provided.innerRef}
+                                    {...provided.draggableProps}
+                                    {...provided.dragHandleProps}
+                                  >
+                                    {item.content}
+                                  </div>
+                                );
+                              }}
+                            </Draggable>
+                          );
+                        })}
+                        {provided.placeholder}
+                      </div>
+                    );
+                  }}
+                </Droppable>
+              </KanbanColumn>
+            );
+          })}
+        </DragDropContext>
       </div>
     </div>
   );

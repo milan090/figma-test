@@ -1,12 +1,16 @@
 import React from "react";
+import { useDrag } from "react-dnd";
 
 interface CardProps {
   children: React.ReactNode;
 }
 
-export const Card: React.FC<CardProps> = ({ children }) => {
+export type CardComponent = React.FC<CardProps>;
+
+export const Card: CardComponent = ({ children }) => {
+  // overflow-hidden rounded-full h-[18px]
   return (
-    <div className="w-full rounded-lg bg-white border border-[##DDDDDD] p-4 card-shadow flex flex-col items-start gap-y-2"> 
+    <div className="w-full rounded-lg bg-white border border-[##DDDDDD] p-4 card-shadow flex flex-col items-start gap-y-2">
       {children}
     </div>
   );
